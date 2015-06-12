@@ -44,6 +44,8 @@ var (
 	regexSection    = regexp.MustCompile(`^[0-9*]+$`)
 	regexRHS        = regexp.MustCompile(`^\d*$`)
 	regexWhitespace = regexp.MustCompile(`[ \t]+`)
+	regexCmdStdin   = regexp.MustCompile(`([^\\])%`)
+	regexCmdStdin2  = regexp.MustCompile(`\\%`)
 )
 
 // CronParser is a struct representing a full crontab and its environment.
@@ -71,6 +73,7 @@ type CronEntry struct {
 	DayOfWeek *CronSection
 	User      string
 	Command   string
+	Stdin     string
 }
 
 // NewCronParser constructs a new CronParser.
@@ -166,7 +169,19 @@ func parseLine(line string) (*CronEntry, error) {
 		return nil, fmt.Errorf("Not enough components found in cron line %q", line)
 	}
 
-	entry := &CronEntry{User: strs[5], Command: strs[6]}
+	// Handle this little known feature
+	// Percent-signs (%) in the command, unless escaped with  backslash (\), will
+	// be changed into newline characters, and all data after the first % will be
+	// sent to the command as standard input.
+	c := regexCmdStdin.ReplaceAllString(strs[6], "${1}\n")
+	c = regexCmdStdin2.ReplaceAllString(c, "%")
+	cs := strings.SplitN(c, "\n", 2)
+
+	entry := &CronEntry{User: strs[5]}
+	entry.Command = cs[0]
+	if len(cs) > 1 {
+		entry.Stdin = cs[1]
+	}
 
 	if err := parseSectionVar(&entry.Minute, strs[0]); err != nil {
 		return nil, err

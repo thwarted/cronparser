@@ -29,6 +29,7 @@ var parseableLines = map[string]*CronEntry{
 		DayOfWeek: &CronSection{Time: "*"},
 		User:      "root",
 		Command:   "cd / && run-parts --report /etc/cron.hourly",
+		Stdin:     "",
 	},
 	"25 6    * * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )": &CronEntry{
 		Minute:    &CronSection{Time: "25"},
@@ -38,6 +39,7 @@ var parseableLines = map[string]*CronEntry{
 		DayOfWeek: &CronSection{Time: "*"},
 		User:      "root",
 		Command:   "test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )",
+		Stdin:     "",
 	},
 	"47 6    * * 7   fart test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )": &CronEntry{
 		Minute:    &CronSection{Time: "47"},
@@ -47,6 +49,7 @@ var parseableLines = map[string]*CronEntry{
 		DayOfWeek: &CronSection{Time: "7"},
 		User:      "fart",
 		Command:   "test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )",
+		Stdin:     "",
 	},
 }
 
@@ -186,6 +189,8 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 52 6    1 * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
 #
 */1 * * * * root /usr/local/rtm/bin/rtm 9 > /dev/null 2> /dev/null
+*/2 * * * * root somecommand >> /tmp/commandlog.$( date +\%Y\%m\%d )
+*/15 * * * * root somecommand >> /tmp/commandlog.$( date +\%Y\%m\%d ) %command has trailing space% stdin line with leading space
 `
 	cp := NewCronParser()
 
@@ -207,6 +212,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 				DayOfWeek: &CronSection{Time: "*"},
 				User:      "root",
 				Command:   "cd / && run-parts --report /etc/cron.hourly",
+				Stdin:     "",
 			},
 			&CronEntry{
 				Minute:    &CronSection{Time: "25"},
@@ -216,6 +222,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 				DayOfWeek: &CronSection{Time: "*"},
 				User:      "root",
 				Command:   "test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )",
+				Stdin:     "",
 			},
 			&CronEntry{
 				Minute:    &CronSection{Time: "47"},
@@ -225,6 +232,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 				DayOfWeek: &CronSection{Time: "7"},
 				User:      "root",
 				Command:   "test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )",
+				Stdin:     "",
 			},
 			&CronEntry{
 				Minute:    &CronSection{Time: "52"},
@@ -234,6 +242,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 				DayOfWeek: &CronSection{Time: "*"},
 				User:      "root",
 				Command:   "test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )",
+				Stdin:     "",
 			},
 			&CronEntry{
 				Minute:    &CronSection{Time: "*", Interval: "1"},
@@ -243,6 +252,27 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 				DayOfWeek: &CronSection{Time: "*"},
 				User:      "root",
 				Command:   "/usr/local/rtm/bin/rtm 9 > /dev/null 2> /dev/null",
+				Stdin:     "",
+			},
+			&CronEntry{
+				Minute:    &CronSection{Time: "*", Interval: "2"},
+				Hour:      &CronSection{Time: "*"},
+				Day:       &CronSection{Time: "*"},
+				Month:     &CronSection{Time: "*"},
+				DayOfWeek: &CronSection{Time: "*"},
+				User:      "root",
+				Command:   `somecommand >> /tmp/commandlog.$( date +%Y%m%d )`,
+				Stdin:     "",
+			},
+			&CronEntry{
+				Minute:    &CronSection{Time: "*", Interval: "15"},
+				Hour:      &CronSection{Time: "*"},
+				Day:       &CronSection{Time: "*"},
+				Month:     &CronSection{Time: "*"},
+				DayOfWeek: &CronSection{Time: "*"},
+				User:      "root",
+				Command:   `somecommand >> /tmp/commandlog.$( date +%Y%m%d ) `,
+				Stdin:     "command has trailing space\n stdin line with leading space",
 			},
 		},
 	}
